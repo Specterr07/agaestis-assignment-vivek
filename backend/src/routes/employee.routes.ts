@@ -9,8 +9,11 @@ import {
 
 const router = Router();
 
-// GET /api/v1/employees - List all / filter
+// GET /api/v1/employees - List all / filter / paginate
 router.get('/', EmployeeController.getEmployees);
+
+// GET /api/v1/employees/stats - Company-wide workforce statistics
+router.get('/stats', EmployeeController.getStats);
 
 // GET /api/v1/employees/:id - Get single employee
 router.get('/:id', validateParams(employeeIdParamSchema), EmployeeController.getEmployeeById);

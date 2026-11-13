@@ -18,6 +18,21 @@ export class EmployeeController {
   }
 
   /**
+   * GET /api/v1/employees/stats
+   */
+  static async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await EmployeeService.getStats();
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /api/v1/employees/:id
    */
   static async getEmployeeById(req: Request, res: Response, next: NextFunction): Promise<void> {

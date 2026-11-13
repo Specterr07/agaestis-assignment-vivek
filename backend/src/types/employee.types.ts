@@ -41,9 +41,18 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
+export interface WorkforceStats {
+  total: number;
+  active: number;
+  onLeave: number;
+  terminated: number;
+  departments: Record<string, number>;
+}
+
 export interface PaginatedResult<T> {
   items: T[];
   pagination: PaginationMeta;
+  stats: WorkforceStats;
 }
 
 export interface ApiResponse<T = any> {

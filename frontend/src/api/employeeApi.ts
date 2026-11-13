@@ -5,6 +5,7 @@ import {
   UpdateEmployeeInput,
   ApiResponse,
   PaginatedEmployees,
+  WorkforceStats,
 } from '../types/employee.types';
 
 export interface GetEmployeesParams {
@@ -28,7 +29,6 @@ export const employeeApi = {
     if (res.data.data?.items && res.data.data.pagination) {
       return res.data.data;
     }
-    // Fallback if data is returned as flat array
     const rawItems = (res.data.data as any) || [];
     return {
       items: Array.isArray(rawItems) ? rawItems : [],
@@ -39,6 +39,14 @@ export const employeeApi = {
         totalPages: 1,
       },
     };
+  },
+
+  /**
+   * Fetch company-wide workforce statistics
+   */
+  async getStats(): Promise<WorkforceStats> {
+    const res = await apiClient.get<ApiResponse<WorkforceStats>>('/employees/stats');
+    return res.data.data!;
   },
 
   /**

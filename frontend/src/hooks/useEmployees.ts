@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Employee,
   CreateEmployeeInput,
   UpdateEmployeeInput,
   PaginationMeta,
+  WorkforceStats,
 } from '../types/employee.types';
 import { employeeApi } from '../api/employeeApi';
 
@@ -17,6 +18,13 @@ export function useEmployees() {
     page: 1,
     limit: 10,
     totalPages: 1,
+  });
+  const [stats, setStats] = useState<WorkforceStats>({
+    total: 0,
+    active: 0,
+    onLeave: 0,
+    terminated: 0,
+    departments: {},
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +66,6 @@ export function useEmployees() {
       setLoading(true);
       setError(null);
 
-      // Determine sortBy and sortOrder for server
       let sortBy: string | undefined = undefined;
       let sortOrder: string | undefined = undefined;
 
@@ -84,6 +91,9 @@ export function useEmployees() {
 
       setEmployees(res.items);
       setPagination(res.pagination);
+      if (res.stats) {
+        setStats(res.stats);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load employees');
     } finally {
@@ -145,20 +155,6 @@ export function useEmployees() {
     setStartDate('');
     setEndDate('');
   };
-
-  // Overall Statistics calculation (derived from current view or total)
-  const stats = useMemo(() => {
-    const total = pagination.total || employees.length;
-    const active = employees.filter((e) => e.status === 'ACTIVE').length;
-    const onLeave = employees.filter((e) => e.status === 'ON_LEAVE').length;
-
-    const departments = employees.reduce((acc, emp) => {
-      acc[emp.department] = (acc[emp.department] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return { total, active, onLeave, departments };
-  }, [employees, pagination.total]);
 
   // Add Employee mutation
   const addEmployee = async (input: CreateEmployeeInput) => {

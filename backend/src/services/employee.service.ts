@@ -4,11 +4,48 @@ import {
   UpdateEmployeeDto,
   EmployeeFilterQuery,
   PaginatedResult,
+  WorkforceStats,
 } from '../types/employee.types.js';
 import { AppError } from '../middlewares/errorHandler.middleware.js';
 import { Prisma } from '@prisma/client';
 
 export class EmployeeService {
+  /**
+   * Fetch company-wide workforce statistics
+   */
+  static async getStats(): Promise<WorkforceStats> {
+    const [total, deptGroups, statusGroups] = await Promise.all([
+      prisma.employee.count({ where: { deletedAt: null } }),
+      prisma.employee.groupBy({
+        by: ['department'],
+        where: { deletedAt: null },
+        _count: { department: true },
+      }),
+      prisma.employee.groupBy({
+        by: ['status'],
+        where: { deletedAt: null },
+        _count: { status: true },
+      }),
+    ]);
+
+    const departments: Record<string, number> = {};
+    for (const group of deptGroups) {
+      departments[group.department] = group._count.department;
+    }
+
+    const active = statusGroups.find((s) => s.status === 'ACTIVE')?._count.status || 0;
+    const onLeave = statusGroups.find((s) => s.status === 'ON_LEAVE')?._count.status || 0;
+    const terminated = statusGroups.find((s) => s.status === 'TERMINATED')?._count.status || 0;
+
+    return {
+      total,
+      active,
+      onLeave,
+      terminated,
+      departments,
+    };
+  }
+
   /**
    * Fetch employees with server-side pagination, search, date range, department, and sorting
    */
@@ -83,8 +120,8 @@ export class EmployeeService {
     orderBy.push({ createdAt: 'desc' });
     orderBy.push({ id: 'desc' });
 
-    // Execute paginated queries in parallel
-    const [items, total] = await Promise.all([
+    // Execute paginated queries and global stats in parallel
+    const [items, total, stats] = await Promise.all([
       prisma.employee.findMany({
         where,
         orderBy,
@@ -92,6 +129,7 @@ export class EmployeeService {
         take: pageSize,
       }),
       prisma.employee.count({ where }),
+      this.getStats(),
     ]);
 
     // Handle edge case where statusPriority is ON_LEAVE
@@ -112,6 +150,7 @@ export class EmployeeService {
         limit: pageSize,
         totalPages: Math.ceil(total / pageSize) || 1,
       },
+      stats,
     };
   }
 
@@ -134,7 +173,6 @@ export class EmployeeService {
    * Create a new employee
    */
   static async createEmployee(dto: CreateEmployeeDto) {
-    // Check if email already exists
     const existing = await prisma.employee.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
@@ -164,10 +202,8 @@ export class EmployeeService {
    * Update an existing employee
    */
   static async updateEmployee(id: number, dto: UpdateEmployeeDto) {
-    // Verify existence
     await this.getEmployeeById(id);
 
-    // If email is changing, verify no other employee has it
     if (dto.email) {
       const emailConflict = await prisma.employee.findFirst({
         where: {
