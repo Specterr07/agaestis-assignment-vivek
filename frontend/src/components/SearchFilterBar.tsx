@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Filter, Calendar, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Search, X, Calendar, ChevronDown, ChevronUp, RotateCcw, Briefcase } from 'lucide-react';
 
 export interface SearchFilterBarProps {
   searchQuery: string;
@@ -28,7 +28,6 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
   filteredCount,
   totalCount,
 }) => {
-  const departments = ['ALL', 'Engineering', 'Design', 'Product', 'HR'];
   const [isDateOpenMobile, setIsDateOpenMobile] = useState(false);
 
   const hasDateFilter = Boolean(startDate || endDate);
@@ -49,10 +48,10 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-subtle mb-6 divide-y divide-slate-100">
-      {/* Top Row: Search & Department Chips */}
-      <div className="p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+      {/* Top Row: Search Input, Department Dropdown & Mobile Dates Toggle */}
+      <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         {/* Search Input */}
-        <div className="relative w-full lg:max-w-md">
+        <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
@@ -74,37 +73,39 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
           )}
         </div>
 
-        {/* Department Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none w-full lg:w-auto">
-          <div className="flex items-center gap-1 text-xs text-slate-400 mr-1 hidden sm:flex">
-            <Filter className="w-3.5 h-3.5" />
-            <span>Dept:</span>
+        {/* Controls Section: Department Dropdown & Mobile Date Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          {/* Department Dropdown */}
+          <div className="relative flex-1 sm:flex-none">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <Briefcase className="w-3.5 h-3.5" />
+            </div>
+            <select
+              value={selectedDepartment}
+              onChange={(e) => onDepartmentChange(e.target.value)}
+              className="w-full sm:w-auto pl-8 pr-8 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 appearance-none cursor-pointer transition-colors shadow-xs"
+              aria-label="Filter by Department"
+            >
+              <option value="ALL">All Departments</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Design">Design</option>
+              <option value="Product">Product</option>
+              <option value="HR">HR & Operations</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400">
+              <ChevronDown className="w-3.5 h-3.5" />
+            </div>
           </div>
-          {departments.map((dept) => {
-            const isActive = selectedDepartment.toUpperCase() === dept.toUpperCase();
-            return (
-              <button
-                key={dept}
-                onClick={() => onDepartmentChange(dept)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/60'
-                }`}
-              >
-                {dept === 'ALL' ? 'All Roles' : dept}
-              </button>
-            );
-          })}
 
           {/* Mobile Date Filter Toggle Button */}
           <button
             onClick={() => setIsDateOpenMobile((prev) => !prev)}
-            className={`lg:hidden ml-auto px-2.5 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all ${
+            className={`lg:hidden px-3 py-2 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-all ${
               hasDateFilter
-                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                : 'bg-slate-50 text-slate-600 border-slate-200'
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-xs'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
             }`}
+            aria-label="Toggle Date Filter"
           >
             <Calendar className="w-3.5 h-3.5 text-indigo-600" />
             <span>Dates</span>
