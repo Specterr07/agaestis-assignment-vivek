@@ -17,7 +17,7 @@
 - [x] Started PostgreSQL 16 container and verified port 5432 readiness.
 - [x] Configured `backend/prisma/schema.prisma` with future-proofed Employee model.
 - [x] Pushed schema to PostgreSQL database (`prisma db push`).
-- [x] Created and ran `backend/prisma/seed.ts` with 8 diverse sample employee records.
+- [x] Created and ran initial sample employee records.
 
 ---
 
@@ -64,6 +64,21 @@
 ## Stage 7: Full Server-Side Sorting & Pagination Pipeline [DONE]
 - [x] Updated backend types and schemas to support pagination (`page`, `limit`) and dynamic sorting (`sortBy`, `sortOrder`, `statusPriority`).
 - [x] Updated `EmployeeService.getEmployees` to perform SQL `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET`.
-- [x] Updated frontend `employeeApi.getEmployees` and `useEmployees` hook with debounced search (300ms) and reactive server queries.
+- [x] Updated frontend `employeeApi.getEmployees` and `useEmployees` hook with debounced search and reactive server queries.
 - [x] Implemented responsive Pagination Bar in `EmployeeTable` with Previous/Next buttons and page numbers.
-- [x] Verified full server-side sort & pagination end-to-end with 16 seeded records across multiple pages.
+- [x] Verified full server-side sort & pagination end-to-end.
+
+---
+
+## Stage 8: Scale Seed Data (200 Employees) & Automated Test Suite [DONE]
+- [x] Prepared generator script in `backend/prisma/seed.ts` creating 200 realistic, diverse employees across all departments with varied join dates.
+- [x] Executed seed script and verified database contains 200 records.
+- [x] Wrote comprehensive automated API test suite covering:
+  - CRUD operations (Create, Read, Update, Delete)
+  - Duplicate email conflict handling (`409 Conflict`)
+  - Full text search on name, role, email
+  - Department and date range filtering
+  - Server-side sorting (Alphabetical A-Z, Date Newest/Oldest, Status Cycle)
+  - Server-side pagination (Page 1 vs Page 2 navigation, total count, limit)
+- [x] Wired up `npm test` script in backend and root `package.json`.
+- [x] Ran test suite and verified all 15 tests pass (100% pass rate).

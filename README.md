@@ -53,7 +53,7 @@ cd agaetis-assignment
 docker compose up -d
 ```
 
-### 3. Setup Backend (Install, Push Schema & Seed 8 Employees)
+### 3. Setup Backend (Install, Push Schema & Seed 200 Employees)
 ```bash
 cd backend
 npm install
@@ -70,6 +70,13 @@ npm install
 npm run dev
 ```
 > Frontend runs at `http://localhost:5173`
+
+### 5. Run Automated Test Suite
+From the root directory or backend directory, run:
+```bash
+npm test
+```
+Executes all 15 automated integration tests covering CRUD, Duplicate Email Conflict, Search, Filters, Sorting, and Pagination.
 
 ---
 
