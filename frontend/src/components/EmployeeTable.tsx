@@ -1,12 +1,28 @@
 import React from 'react';
-import { Edit2, Trash2, Mail, Calendar, UserX } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  Mail,
+  Calendar,
+  UserX,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 import { Employee } from '../types/employee.types';
 import { DepartmentBadge, StatusBadge } from './ui/Badge';
 import { Button } from './ui/Button';
+import { SortDirection, StatusCycleType } from '../hooks/useEmployees';
 
 export interface EmployeeTableProps {
   employees: Employee[];
   isLoading: boolean;
+  nameSort: SortDirection;
+  onToggleNameSort: () => void;
+  dateSort: SortDirection;
+  onToggleDateSort: () => void;
+  statusCycle: StatusCycleType;
+  onCycleStatusSort: () => void;
   onEdit: (employee: Employee) => void;
   onDelete: (employee: Employee) => void;
   onAddNew: () => void;
@@ -15,6 +31,12 @@ export interface EmployeeTableProps {
 export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   employees,
   isLoading,
+  nameSort,
+  onToggleNameSort,
+  dateSort,
+  onToggleDateSort,
+  statusCycle,
+  onCycleStatusSort,
   onEdit,
   onDelete,
   onAddNew,
@@ -59,7 +81,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         </div>
         <h3 className="text-base font-semibold text-slate-900">No employees found</h3>
         <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-          We couldn't find any employee matching your search or filters. Try adjusting your query or add a new member.
+          We couldn't find any employee matching your search or filters. Try adjusting your query or date range.
         </p>
         <Button variant="primary" size="sm" onClick={onAddNew}>
           Add New Employee
@@ -74,18 +96,86 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="bg-slate-50/75 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200/80 select-none">
             <tr>
+              {/* Employee Column Header (Alphabetical Sort) */}
               <th scope="col" className="px-6 py-3.5 font-semibold">
-                Employee
+                <button
+                  onClick={onToggleNameSort}
+                  className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
+                  title="Sort alphabetically by Name"
+                >
+                  <span>Employee</span>
+                  {nameSort === 'asc' ? (
+                    <span className="inline-flex items-center gap-0.5 text-indigo-600 font-bold">
+                      <ArrowUp className="w-3.5 h-3.5" />
+                      <span className="text-[10px] lowercase">a-z</span>
+                    </span>
+                  ) : nameSort === 'desc' ? (
+                    <span className="inline-flex items-center gap-0.5 text-indigo-600 font-bold">
+                      <ArrowDown className="w-3.5 h-3.5" />
+                      <span className="text-[10px] lowercase">z-a</span>
+                    </span>
+                  ) : (
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                  )}
+                </button>
               </th>
+
+              {/* Role & Department */}
               <th scope="col" className="px-6 py-3.5 font-semibold hidden md:table-cell">
                 Role & Department
               </th>
+
+              {/* Status Column Header (Status Cycle Sort) */}
               <th scope="col" className="px-6 py-3.5 font-semibold">
-                Status
+                <button
+                  onClick={onCycleStatusSort}
+                  className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
+                  title="Cycle status priority: Default -> Active -> On Leave -> Terminated"
+                >
+                  <span>Status</span>
+                  {statusCycle === 'ACTIVE' ? (
+                    <span className="inline-flex items-center gap-0.5 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
+                      <ArrowDown className="w-3 h-3" /> Active
+                    </span>
+                  ) : statusCycle === 'ON_LEAVE' ? (
+                    <span className="inline-flex items-center gap-0.5 text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-bold border border-amber-200">
+                      <ArrowDown className="w-3 h-3" /> On Leave
+                    </span>
+                  ) : statusCycle === 'TERMINATED' ? (
+                    <span className="inline-flex items-center gap-0.5 text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded text-[10px] font-bold border border-rose-200">
+                      <ArrowDown className="w-3 h-3" /> Terminated
+                    </span>
+                  ) : (
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                  )}
+                </button>
               </th>
+
+              {/* Joined Date Column Header (Date Sort) */}
               <th scope="col" className="px-6 py-3.5 font-semibold hidden lg:table-cell">
-                Joined Date
+                <button
+                  onClick={onToggleDateSort}
+                  className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
+                  title="Sort by Joined Date"
+                >
+                  <span>Joined Date</span>
+                  {dateSort === 'desc' ? (
+                    <span className="inline-flex items-center gap-0.5 text-indigo-600 font-bold">
+                      <ArrowDown className="w-3.5 h-3.5" />
+                      <span className="text-[10px] lowercase">newest</span>
+                    </span>
+                  ) : dateSort === 'asc' ? (
+                    <span className="inline-flex items-center gap-0.5 text-indigo-600 font-bold">
+                      <ArrowUp className="w-3.5 h-3.5" />
+                      <span className="text-[10px] lowercase">oldest</span>
+                    </span>
+                  ) : (
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                  )}
+                </button>
               </th>
+
+              {/* Actions */}
               <th scope="col" className="px-6 py-3.5 font-semibold text-right">
                 Actions
               </th>

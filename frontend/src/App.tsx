@@ -21,6 +21,17 @@ export const App: React.FC = () => {
     setSearchQuery,
     selectedDepartment,
     setSelectedDepartment,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    clearDateFilter,
+    nameSort,
+    toggleNameSort,
+    dateSort,
+    toggleDateSort,
+    statusCycle,
+    cycleStatusSort,
     stats,
     refetch,
     addEmployee,
@@ -105,20 +116,31 @@ export const App: React.FC = () => {
           departments={stats.departments}
         />
 
-        {/* Live Search & Department Filter Bar */}
+        {/* Live Search, Department & Mobile-Responsive Date Selector */}
         <SearchFilterBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           selectedDepartment={selectedDepartment}
           onDepartmentChange={setSelectedDepartment}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          onClearDateFilter={clearDateFilter}
           filteredCount={filteredEmployees.length}
           totalCount={employees.length}
         />
 
-        {/* Data Table */}
+        {/* Data Table with Alphabetical, Status Cycle, and Date Sorting */}
         <EmployeeTable
           employees={filteredEmployees}
           isLoading={loading}
+          nameSort={nameSort}
+          onToggleNameSort={toggleNameSort}
+          dateSort={dateSort}
+          onToggleDateSort={toggleDateSort}
+          statusCycle={statusCycle}
+          onCycleStatusSort={cycleStatusSort}
           onEdit={handleOpenEdit}
           onDelete={handleOpenDelete}
           onAddNew={handleOpenAdd}

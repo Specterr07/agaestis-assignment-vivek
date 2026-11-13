@@ -9,7 +9,7 @@
 ---
 
 ## 2. Target Audience & Personas
-- **HR Managers / Team Leads:** Need quick visibility into company talent, ability to onboard new hires, update employee roles, and offboard employees.
+- **HR Managers / Team Leads:** Need quick visibility into company talent, ability to onboard new hires, update employee roles, filter by join dates, sort workforce by status, and offboard employees.
 - **System Administrators / Evaluators:** Need clear architecture, clean code, predictable API contracts, secure inputs, and effortless setup.
 
 ---
@@ -49,31 +49,23 @@
 
 ---
 
-## 4. Bonus Features (Included in Scope)
-1. **Live Search & Filter (Hybrid Strategy):**
-   - **Backend:** Supports optional server-side query parameters (`?search=`, `?role=`, `?department=`, `?page=`, `?limit=`).
-   - **Frontend:** Provides instant client-side filtering via `useMemo` for zero-latency, flicker-free real-time search across Name, Email, and Role.
-2. **Department Badges:** Color-coded badges for clean visual differentiation (Engineering: Blue, Design: Purple, Product: Amber, HR: Green).
-3. **Pagination & Sorting:** UI pagination controls for large lists and sorting by Join Date or Name.
-4. **Stats Overview:** Top metric cards showing Total Employees, Active Workforce, and Department counts.
-5. **Modern Enterprise UI:** Polished styling using a modern Component Library (Tailwind CSS + Headless UI / Radix primitives + Lucide icons).
+## 4. Enhanced Sorting, Filtering & Bonus Features
 
----
+### 4.1 Alphabetical Sorting on Employee Name
+- Clickable "Employee" table header.
+- Toggles 3 states: A ➔ Z (Ascending), Z ➔ A (Descending), and Default.
+- Uses `localeCompare` for accent-safe alphabetical sorting.
 
-## 5. Non-Functional Requirements
-- **Performance:** Sub-10ms API responses locally (benefiting from PostgreSQL RAM buffer cache); smooth 60fps frontend interactions.
-- **Reliability & Data Integrity:** Database uniqueness constraints on email; transactions for mutations; sanitized inputs.
-- **Security:** Input validation with Zod (Frontend & Backend); CORS whitelisting; parameterized queries via Prisma ORM to eliminate SQL injection.
-- **Maintainability:** Modular architecture, clean separation of concerns, typed end-to-end with TypeScript.
-- **Accessibility (a11y):** Keyboard navigable dialogs, accessible ARIA attributes on modals and buttons.
+### 4.2 Status Sort Cycle
+- Clickable "Status" table header cycling sequentially:
+  `Default` ➔ `Active First` ➔ `On Leave First` ➔ `Terminated First` ➔ `Default`.
+- Clear visual indicator showing current priority status.
 
----
+### 4.3 Joined Date Sorting & Responsive Date Selector
+- **Joined Date Sort:** Clickable header cycling Newest First ➔ Oldest First ➔ Default.
+- **Date Selector Filter:** Mobile-responsive date picker (From date / To date) with timezone-safe day boundaries and instant reset button.
 
-## 6. Acceptance Criteria
-- [ ] Backend runs on port `5000` with CORS enabled.
-- [ ] Database contains seeded records upon initialization for easy evaluation.
-- [ ] All CRUD endpoints work accurately and return standard JSON responses.
-- [ ] Frontend runs on Vite (`localhost:5173`) and communicates via Axios.
-- [ ] Form validates empty fields and duplicate/invalid emails gracefully (`409 Conflict`).
-- [ ] Confirmation prompt safeguards delete action.
-- [ ] Search works dynamically without screen flickering.
+### 4.4 Live Search & Department Filter Chips
+- Live instant search across Name, Email, and Role with 0ms perceived latency.
+- Filter chips for All, Engineering, Design, Product, and HR & Operations.
+- Top metric cards for quick workforce analytics.
