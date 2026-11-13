@@ -1,0 +1,15 @@
+# AI Agent Instruction - Source of Truth
+
+All agents contributing to this project MUST follow the SDLC protocol: **THINK -> PLAN -> CODE**.
+Before making any changes or planning new features, read the documentation files in the `docs/` folder:
+
+1. `docs/AGENT_GUIDELINES.md` - Core operating rules for AI agents
+2. `docs/PRD.md` - Product requirements and functional scope
+3. `docs/ARCHITECTURE.md` - System architecture and directory organization
+4. `docs/DATABASE_SCHEMA.md` - Database schema, indexes, and future-proofing
+5. `docs/DESIGN_TOKENS_AND_UI.md` - UI design tokens, colors, and components
+6. `docs/NAMING_CONVENTIONS.md` - Naming conventions and code standards
+7. `docs/BEST_PRACTICES.md` - Frontend & backend best practices
+8. `docs/TASKS.md` - Task roadmap and tracking
+
+Always maintain the documentation as the single source of truth. If any architectural or schema change occurs, update the relevant docs immediately.

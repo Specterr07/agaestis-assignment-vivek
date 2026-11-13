@@ -1,0 +1,34 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+model Employee {
+  id          Int            @id @default(autoincrement())
+  name        String         @db.VarChar(100)
+  email       String         @unique @db.VarChar(255)
+  role        String         @db.VarChar(100)
+  department  String         @default("Engineering") @db.VarChar(100)
+  status      EmployeeStatus @default(ACTIVE)
+  avatarUrl   String?        @map("avatar_url") @db.VarChar(500)
+  phone       String?        @db.VarChar(20)
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?      @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([role])
+  @@index([department])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("employees")
+}
