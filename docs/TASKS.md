@@ -24,7 +24,7 @@
 ## Stage 3: Backend REST API Development [DONE]
 - [x] Setup Express server with CORS, Morgan logging, and JSON body parser.
 - [x] Created Zod schemas for employee validation (`employee.schema.ts`).
-- [x] Implemented `employee.service.ts` for all CRUD operations + server-side filtering.
+- [x] Implemented `employee.service.ts` for all CRUD operations.
 - [x] Implemented `employee.controller.ts` with standard response envelopes.
 - [x] Implemented route mapping (`GET`, `POST`, `PUT`, `DELETE`, `GET /health`).
 - [x] Implemented `errorHandler.middleware.ts` catching Prisma `P2002` duplicate email error -> `409 Conflict`.
@@ -52,9 +52,18 @@
 
 ---
 
-## Stage 6: Enhanced Sorting & Date Filtering [IN PROGRESS]
-- [ ] Implement Alphabetical sorting (A-Z / Z-A / Default) on Employee column.
-- [ ] Implement Status sort cycle (`Default` -> `Active` -> `On Leave` -> `Terminated` -> `Default`).
-- [ ] Implement Joined Date sort (Newest / Oldest / Default).
-- [ ] Implement timezone-safe, mobile-responsive Date Selector filter with Clear button.
-- [ ] Verify build and responsive behavior across phone and desktop viewports.
+## Stage 6: UI Refinements (Alphabetical Sort, Status Cycle, Date Selector & Dropdown) [DONE]
+- [x] Alphabetical sorting on Employee column.
+- [x] Status sort cycle (`default` -> `active` -> `on leave` -> `terminated`).
+- [x] Joined Date sort (Newest / Oldest / Default).
+- [x] Mobile-responsive Date Selector with timezone-safe day boundaries.
+- [x] Refactored Department filter to Dropdown menu.
+
+---
+
+## Stage 7: Full Server-Side Sorting & Pagination Pipeline [DONE]
+- [x] Updated backend types and schemas to support pagination (`page`, `limit`) and dynamic sorting (`sortBy`, `sortOrder`, `statusPriority`).
+- [x] Updated `EmployeeService.getEmployees` to perform SQL `WHERE`, `ORDER BY`, `LIMIT`, and `OFFSET`.
+- [x] Updated frontend `employeeApi.getEmployees` and `useEmployees` hook with debounced search (300ms) and reactive server queries.
+- [x] Implemented responsive Pagination Bar in `EmployeeTable` with Previous/Next buttons and page numbers.
+- [x] Verified full server-side sort & pagination end-to-end with 16 seeded records across multiple pages.

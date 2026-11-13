@@ -17,44 +17,32 @@
 ## 2. Architecture Decisions & Rationale
 
 ### ADR 001: Vite + React vs. Next.js
-- **Context:** The prompt allows React+Vite or Next.js.
 - **Decision:** Choose **Vite + React + TypeScript**.
-- **Rationale:** A standalone Vite frontend provides an isolated SPA environment that communicates cleanly over standard CORS REST endpoints with an independent Node/Express backend. It avoids Next.js server component complexity and hydration quirks for this CRUD scope.
+- **Rationale:** A standalone Vite frontend provides an isolated SPA environment that communicates cleanly over standard CORS REST endpoints with an independent Node/Express backend.
 
 ### ADR 002: Prisma ORM over Raw SQL / Knex
-- **Context:** Need PostgreSQL interaction with migrations and models.
 - **Decision:** Choose **Prisma ORM**.
-- **Rationale:** Prisma offers zero-cost TypeScript generation directly from `schema.prisma`. It eliminates typing mismatches between DB and server, enables auto-migration generation, and provides a built-in seeding mechanism (`prisma db seed`).
+- **Rationale:** Prisma offers zero-cost TypeScript generation directly from `schema.prisma`. It eliminates typing mismatches between DB and server.
 
 ### ADR 003: Layered Backend Architecture (Route - Controller - Service)
-- **Context:** Backend needs maintainability, brevity, and readability per evaluation criteria.
-- **Decision:** Enforce 3 distinct backend layers without unnecessary repository wrapper classes:
-  1. `routes`: Mapping HTTP methods to controllers and validating inputs via Zod middleware.
-  2. `controllers`: Handling Express `req` and `res`, returning standard envelope structures.
-  3. `services`: Business logic and Prisma queries.
-- **Rationale:** Separating concerns ensures the code is easily testable and readable while keeping it concise.
+- **Decision:** Enforce 3 distinct backend layers without unnecessary repository wrapper classes.
 
 ### ADR 004: Component Design Pattern (Headless UI + Tailwind)
-- **Context:** We need rapid execution within 1 hour while achieving enterprise-grade UI quality.
 - **Decision:** Use Tailwind CSS coupled with Headless UI/Radix primitives and Lucide-React icons.
-- **Rationale:** Heavy opinionated UI libraries (AntD/MUI) bring massive bundle weight. Headless UI + Tailwind gives full control over accessible modals, badges, tables, and buttons with consistent design tokens.
 
 ### ADR 005: Future-Proof Database Schema Design
-- **Context:** The assignment asks for `id`, `name`, `email`, `role`, `created_at`.
 - **Decision:** Extend schema with `updated_at`, `department`, `status`, and indexes while keeping core fields backward compatible.
-- **Rationale:** Real-world HR systems require auditing, department segmentation, and status tracking (active/leave/terminated).
 
 ### ADR 006: Native Caching (PostgreSQL Buffer Cache + HTTP ETags) vs. Redis
-- **Context:** Evaluation of server-side caching requirements.
-- **Decision:** Utilize **PostgreSQL's native `shared_buffers` RAM cache** and **Express HTTP ETags / Cache-Control headers**; do NOT introduce Redis or in-memory process caches.
-- **Rationale:** For an employee directory dataset (<1,000 records), PostgreSQL's 128MB RAM buffer cache serves queries in `< 0.2ms` with 100% cache-hit ratio and zero stale-read risk. Redis would add 30+ minutes of Docker networking overhead, connection pooling, and complex cache-invalidation bugs on create/update/delete.
+- **Decision:** Rely on PostgreSQL internal `shared_buffers` and Express weak `ETag`s. Reject external Redis over-engineering.
 
 ### ADR 007: Frontend State Management via Custom Hook (`useEmployees`) vs. TanStack Query
-- **Context:** Client-side data fetching and state handling.
-- **Decision:** Implement a clean, dedicated React custom hook (`useEmployees`) with Axios instead of pulling in TanStack Query or SWR.
-- **Rationale:** A custom hook keeps the frontend lightweight, provides 100% type safety, avoids cache key synchronization issues, and enables instant refetching upon successful mutations.
+- **Decision:** Dedicated React custom hook (`useEmployees`) with Axios.
 
-### ADR 008: Hybrid Filtering Strategy
-- **Context:** Live search and filtering user experience vs backend query capabilities.
-- **Decision:** Implement **server-side query parameters** in Express/Prisma (`?search=`, `?role=`, `?department=`) and execute **client-side instant filtering via `useMemo`** on the initial dataset in the frontend.
-- **Rationale:** Server-side filtering proves backend robustness. Client-side filtering ensures instant 60fps typing, 0ms perceived latency, zero screen flickering, and eliminates debouncing race conditions.
+### ADR 008: Server-Side Sorting & Pagination Architecture
+- **Context:** Deciding between client-side data slicing vs full server-side processing for sorting, filtering, and pagination.
+- **Decision:** Implement **end-to-end Server-Side Sorting & Pagination**.
+- **Rationale:** 
+  1. **Algorithmic Accuracy:** Server-side sorting guarantees that sorting by Name (A–Z) or Date evaluates across the entire database before slicing pages via `LIMIT` and `OFFSET`. Client-side sorting on paginated data results in page-isolated sort bugs.
+  2. **Scalability:** Offloads sorting to PostgreSQL's indexed B-Tree engine (`idx_employees_created_at`, `idx_employees_role`, `idx_employees_status`), keeping browser memory usage constant regardless of dataset size.
+  3. **Debounced Network Calls:** Keystroke input in the search bar is debounced by 300ms, minimizing network roundtrips while preserving responsive UI feel.

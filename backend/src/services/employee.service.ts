@@ -1,19 +1,43 @@
 import prisma from '../config/db.js';
-import { CreateEmployeeDto, UpdateEmployeeDto, EmployeeFilterQuery } from '../types/employee.types.js';
+import {
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  EmployeeFilterQuery,
+  PaginatedResult,
+} from '../types/employee.types.js';
 import { AppError } from '../middlewares/errorHandler.middleware.js';
 import { Prisma } from '@prisma/client';
 
 export class EmployeeService {
   /**
-   * Fetch all employees with optional search, role, department, and pagination filters
+   * Fetch employees with server-side pagination, search, date range, department, and sorting
    */
-  static async getEmployees(filter: EmployeeFilterQuery) {
-    const { search, role, department, status, page, limit } = filter;
+  static async getEmployees(filter: EmployeeFilterQuery): Promise<PaginatedResult<any>> {
+    const {
+      search,
+      role,
+      department,
+      status,
+      page,
+      limit,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      statusPriority,
+      startDate,
+      endDate,
+    } = filter;
 
+    const pageNum = Math.max(1, parseInt(page || '1', 10));
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit || '10', 10)));
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build WHERE clause
     const where: Prisma.EmployeeWhereInput = {
       deletedAt: null,
-      ...(role && { role: { equals: role } }),
-      ...(department && { department: { equals: department } }),
+      ...(role && { role: { equals: role, mode: 'insensitive' } }),
+      ...(department && department !== 'ALL' && {
+        department: { equals: department, mode: 'insensitive' },
+      }),
       ...(status && { status: { equals: status } }),
       ...(search && {
         OR: [
@@ -25,38 +49,70 @@ export class EmployeeService {
       }),
     };
 
-    // If pagination parameters are supplied
-    if (page || limit) {
-      const pageNum = Math.max(1, parseInt(page || '1', 10));
-      const pageSize = Math.max(1, Math.min(100, parseInt(limit || '10', 10)));
-      const skip = (pageNum - 1) * pageSize;
-
-      const [items, total] = await Promise.all([
-        prisma.employee.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: pageSize,
-        }),
-        prisma.employee.count({ where }),
-      ]);
-
-      return {
-        items,
-        pagination: {
-          total,
-          page: pageNum,
-          limit: pageSize,
-          totalPages: Math.ceil(total / pageSize),
-        },
-      };
+    // Date range filtering (Timezone safe day boundaries)
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+        where.createdAt.gte = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0);
+      }
+      if (endDate) {
+        const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+        where.createdAt.lte = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999);
+      }
     }
 
-    // Default: Return all records ordered by newest first
-    return await prisma.employee.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    // Build ORDER BY clause
+    const orderBy: Prisma.EmployeeOrderByWithRelationInput[] = [];
+
+    // 1. Status Priority Sorting
+    if (statusPriority === 'ACTIVE') {
+      orderBy.push({ status: 'asc' }); // ACTIVE comes first in enum
+    } else if (statusPriority === 'TERMINATED') {
+      orderBy.push({ status: 'desc' }); // TERMINATED comes first
+    }
+
+    // 2. Specific Column Sorting (Name or Joined Date)
+    if (sortBy === 'name') {
+      orderBy.push({ name: sortOrder === 'desc' ? 'desc' : 'asc' });
+    } else if (sortBy === 'createdAt') {
+      orderBy.push({ createdAt: sortOrder === 'asc' ? 'asc' : 'desc' });
+    }
+
+    // 3. Fallback tie-breaker
+    orderBy.push({ createdAt: 'desc' });
+    orderBy.push({ id: 'desc' });
+
+    // Execute paginated queries in parallel
+    const [items, total] = await Promise.all([
+      prisma.employee.findMany({
+        where,
+        orderBy,
+        skip,
+        take: pageSize,
+      }),
+      prisma.employee.count({ where }),
+    ]);
+
+    // Handle edge case where statusPriority is ON_LEAVE
+    let finalItems = items;
+    if (statusPriority === 'ON_LEAVE') {
+      finalItems = [...items].sort((a, b) => {
+        if (a.status === 'ON_LEAVE' && b.status !== 'ON_LEAVE') return -1;
+        if (a.status !== 'ON_LEAVE' && b.status === 'ON_LEAVE') return 1;
+        return 0;
+      });
+    }
+
+    return {
+      items: finalItems,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize) || 1,
+      },
+    };
   }
 
   /**
@@ -144,12 +200,11 @@ export class EmployeeService {
   }
 
   /**
-   * Delete an employee (standard delete / soft delete)
+   * Delete an employee
    */
   static async deleteEmployee(id: number) {
     await this.getEmployeeById(id);
 
-    // Hard delete to keep table clean for assignment, or soft delete
     return await prisma.employee.delete({
       where: { id },
     });

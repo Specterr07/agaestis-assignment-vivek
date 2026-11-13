@@ -27,6 +27,23 @@ export interface EmployeeFilterQuery {
   status?: EmployeeStatus;
   page?: string;
   limit?: string;
+  sortBy?: 'name' | 'createdAt' | 'status';
+  sortOrder?: 'asc' | 'desc';
+  statusPriority?: 'ACTIVE' | 'ON_LEAVE' | 'TERMINATED' | 'default';
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: PaginationMeta;
 }
 
 export interface ApiResponse<T = any> {

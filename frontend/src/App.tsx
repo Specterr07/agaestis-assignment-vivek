@@ -14,7 +14,8 @@ import { Button } from './components/ui/Button';
 export const App: React.FC = () => {
   const {
     employees,
-    filteredEmployees,
+    pagination,
+    setPage,
     loading,
     error,
     searchQuery,
@@ -85,7 +86,7 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Top Brand & Actions Header */}
       <Header
-        totalEmployees={employees.length}
+        totalEmployees={pagination.total || stats.total}
         onAddClick={handleOpenAdd}
       />
 
@@ -110,7 +111,7 @@ export const App: React.FC = () => {
 
         {/* Top Metric Cards */}
         <StatsOverview
-          total={stats.total}
+          total={pagination.total || stats.total}
           active={stats.active}
           onLeave={stats.onLeave}
           departments={stats.departments}
@@ -127,13 +128,15 @@ export const App: React.FC = () => {
           endDate={endDate}
           onEndDateChange={setEndDate}
           onClearDateFilter={clearDateFilter}
-          filteredCount={filteredEmployees.length}
-          totalCount={employees.length}
+          filteredCount={employees.length}
+          totalCount={pagination.total}
         />
 
-        {/* Data Table with Alphabetical, Status Cycle, and Date Sorting */}
+        {/* Data Table with Server-Side Alphabetical, Status Cycle, Date Sorting, and Pagination */}
         <EmployeeTable
-          employees={filteredEmployees}
+          employees={employees}
+          pagination={pagination}
+          onPageChange={setPage}
           isLoading={loading}
           nameSort={nameSort}
           onToggleNameSort={toggleNameSort}

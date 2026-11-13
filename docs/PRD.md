@@ -16,9 +16,31 @@
 
 ## 3. Core Functional Requirements (MVP)
 
-### 3.1 Employee Listing (`GET /api/v1/employees`)
+### 3.1 Employee Listing & Server-Side Pagination (`GET /api/v1/employees`)
 - Display all employees in a structured, interactive table/list.
-- Columns: Avatar/Initials, Full Name, Email, Job Role, Department, Status Badge, Join Date (`created_at`), and Action Buttons.
+- Full server-side query processing using PostgreSQL indexes:
+  - `page`: Current page number (integer, default: 1).
+  - `limit`: Items per page (integer, default: 10, max: 100).
+  - `sortBy`: Column to sort by (`name`, `createdAt`, `status`).
+  - `sortOrder`: Direction (`asc`, `desc`).
+  - `search`: Case-insensitive text search matching name, email, or role.
+  - `department`: Filter by department (e.g. Engineering, Design, Product, HR).
+  - `startDate` & `endDate`: Timezone-safe date boundaries for join dates.
+- Standard Paginated Response:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "items": [ ... ],
+      "pagination": {
+        "total": 48,
+        "page": 1,
+        "limit": 10,
+        "totalPages": 5
+      }
+    }
+  }
+  ```
 - Loading states (Skeleton loader) and Empty states ("No employees found").
 - HTTP Status: `200 OK`.
 
@@ -51,21 +73,21 @@
 
 ## 4. Enhanced Sorting, Filtering & Bonus Features
 
-### 4.1 Alphabetical Sorting on Employee Name
+### 4.1 Server-Side Alphabetical Sorting on Employee Name
 - Clickable "Employee" table header.
-- Toggles 3 states: A ➔ Z (Ascending), Z ➔ A (Descending), and Default.
-- Uses `localeCompare` for accent-safe alphabetical sorting.
+- Toggles 3 states: A ➔ Z (`sortBy=name&sortOrder=asc`), Z ➔ A (`sortBy=name&sortOrder=desc`), and Default (`sortBy=createdAt&sortOrder=desc`).
+- Uses PostgreSQL database collation for true alphabetical ordering across entire dataset.
 
-### 4.2 Status Sort Cycle
+### 4.2 Server-Side Status Sort Cycle
 - Clickable "Status" table header cycling sequentially:
   `Default` ➔ `Active First` ➔ `On Leave First` ➔ `Terminated First` ➔ `Default`.
-- Clear visual indicator showing current priority status.
+- Database evaluates priority ranking using indexed status enums.
 
 ### 4.3 Joined Date Sorting & Responsive Date Selector
 - **Joined Date Sort:** Clickable header cycling Newest First ➔ Oldest First ➔ Default.
-- **Date Selector Filter:** Mobile-responsive date picker (From date / To date) with timezone-safe day boundaries and instant reset button.
+- **Date Selector Filter:** Mobile-responsive date picker (From date / To date) with server-side SQL date range filtering (`createdAt >= startDate AND createdAt <= endDate`).
 
-### 4.4 Live Search & Department Filter Chips
-- Live instant search across Name, Email, and Role with 0ms perceived latency.
-- Filter chips for All, Engineering, Design, Product, and HR & Operations.
-- Top metric cards for quick workforce analytics.
+### 4.4 Live Search & Department Filter Dropdown
+- Live debounced search across Name, Email, and Role.
+- Department dropdown for All, Engineering, Design, Product, and HR & Operations.
+- Full pagination controls (`Previous`, `Page X of Y`, `Next`) at table footer.

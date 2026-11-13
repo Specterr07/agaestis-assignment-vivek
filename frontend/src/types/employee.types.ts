@@ -34,6 +34,18 @@ export interface UpdateEmployeeInput {
   phone?: string;
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedEmployees {
+  items: Employee[];
+  pagination: PaginationMeta;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;

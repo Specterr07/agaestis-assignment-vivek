@@ -8,14 +8,18 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { Employee } from '../types/employee.types';
+import { Employee, PaginationMeta } from '../types/employee.types';
 import { DepartmentBadge, StatusBadge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { SortDirection, StatusCycleType } from '../hooks/useEmployees';
 
 export interface EmployeeTableProps {
   employees: Employee[];
+  pagination: PaginationMeta;
+  onPageChange: (page: number) => void;
   isLoading: boolean;
   nameSort: SortDirection;
   onToggleNameSort: () => void;
@@ -30,6 +34,8 @@ export interface EmployeeTableProps {
 
 export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   employees,
+  pagination,
+  onPageChange,
   isLoading,
   nameSort,
   onToggleNameSort,
@@ -42,7 +48,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   onAddNew,
 }) => {
   // Skeleton loader during fetch
-  if (isLoading) {
+  if (isLoading && employees.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-subtle overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -73,7 +79,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   }
 
   // Empty state
-  if (employees.length === 0) {
+  if (employees.length === 0 && !isLoading) {
     return (
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-subtle p-12 text-center">
         <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-3">
@@ -81,7 +87,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         </div>
         <h3 className="text-base font-semibold text-slate-900">No employees found</h3>
         <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-          We couldn't find any employee matching your search or filters. Try adjusting your query or date range.
+          We couldn't find any employee matching your criteria. Try adjusting your search or date filter.
         </p>
         <Button variant="primary" size="sm" onClick={onAddNew}>
           Add New Employee
@@ -89,6 +95,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       </div>
     );
   }
+
+  const { total, page, limit, totalPages } = pagination;
+  const startRecord = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endRecord = Math.min(page * limit, total);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-subtle overflow-hidden">
@@ -101,7 +111,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 <button
                   onClick={onToggleNameSort}
                   className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
-                  title="Sort alphabetically by Name"
+                  title="Server-side Alphabetical Sort"
                 >
                   <span>Employee</span>
                   {nameSort === 'asc' ? (
@@ -130,7 +140,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 <button
                   onClick={onCycleStatusSort}
                   className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
-                  title="Cycle status priority: Default -> Active -> On Leave -> Terminated"
+                  title="Server Status Cycle: Default -> Active -> On Leave -> Terminated"
                 >
                   <span>Status</span>
                   {statusCycle === 'ACTIVE' ? (
@@ -156,7 +166,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 <button
                   onClick={onToggleDateSort}
                   className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors focus:outline-none group text-left"
-                  title="Sort by Joined Date"
+                  title="Server Joined Date Sort"
                 >
                   <span>Joined Date</span>
                   {dateSort === 'desc' ? (
@@ -181,7 +191,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className={`divide-y divide-slate-100 ${isLoading ? 'opacity-60 transition-opacity' : ''}`}>
             {employees.map((emp) => {
               const initials = emp.name
                 .split(' ')
@@ -273,9 +283,41 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           </tbody>
         </table>
       </div>
-      <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
-        <span>Showing {employees.length} employee records</span>
-        <span className="text-[11px] text-slate-400">PostgreSQL 16 • ACID Compliant</span>
+
+      {/* Responsive Pagination Bar */}
+      <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+        <div>
+          Showing <span className="font-semibold text-slate-900">{startRecord}</span> to{' '}
+          <span className="font-semibold text-slate-900">{endRecord}</span> of{' '}
+          <span className="font-semibold text-slate-900">{total}</span> employees
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1 || isLoading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Previous</span>
+          </button>
+
+          <div className="px-2.5 py-1 text-slate-600 font-medium bg-white border border-slate-200 rounded-lg shadow-2xs">
+            Page {page} of {totalPages}
+          </div>
+
+          <button
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= totalPages || isLoading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs"
+            aria-label="Next page"
+          >
+            <span>Next</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

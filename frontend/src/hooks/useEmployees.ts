@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Employee, CreateEmployeeInput, UpdateEmployeeInput } from '../types/employee.types';
+import {
+  Employee,
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
+  PaginationMeta,
+} from '../types/employee.types';
 import { employeeApi } from '../api/employeeApi';
 
 export type StatusCycleType = 'default' | 'ACTIVE' | 'ON_LEAVE' | 'TERMINATED';
@@ -7,11 +12,22 @@ export type SortDirection = 'asc' | 'desc' | null;
 
 export function useEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pagination State
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('ALL');
 
   // Date Range Filter State
@@ -20,22 +36,70 @@ export function useEmployees() {
 
   // Sorting States
   const [nameSort, setNameSort] = useState<SortDirection>(null);
-  const [dateSort, setDateSort] = useState<SortDirection>('desc'); // Default to newest first
+  const [dateSort, setDateSort] = useState<SortDirection>('desc'); // Default newest first
   const [statusCycle, setStatusCycle] = useState<StatusCycleType>('default');
 
-  // Fetch all employees from backend
+  // Debounce search query input by 300ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset to page 1 whenever filters or sorting change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, selectedDepartment, startDate, endDate, nameSort, dateSort, statusCycle]);
+
+  // Fetch from server with full query params
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await employeeApi.getEmployees();
-      setEmployees(data);
+
+      // Determine sortBy and sortOrder for server
+      let sortBy: string | undefined = undefined;
+      let sortOrder: string | undefined = undefined;
+
+      if (nameSort !== null) {
+        sortBy = 'name';
+        sortOrder = nameSort;
+      } else if (dateSort !== null) {
+        sortBy = 'createdAt';
+        sortOrder = dateSort;
+      }
+
+      const res = await employeeApi.getEmployees({
+        page,
+        limit,
+        search: debouncedSearch.trim() || undefined,
+        department: selectedDepartment !== 'ALL' ? selectedDepartment : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        sortBy,
+        sortOrder,
+        statusPriority: statusCycle,
+      });
+
+      setEmployees(res.items);
+      setPagination(res.pagination);
     } catch (err: any) {
       setError(err.message || 'Failed to load employees');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [
+    page,
+    limit,
+    debouncedSearch,
+    selectedDepartment,
+    startDate,
+    endDate,
+    nameSort,
+    dateSort,
+    statusCycle,
+  ]);
 
   useEffect(() => {
     fetchEmployees();
@@ -60,7 +124,7 @@ export function useEmployees() {
   };
 
   const toggleNameSort = () => {
-    setDateSort(null); // Clear date sort when user explicitly sorts by name
+    setDateSort(null);
     setNameSort((prev) => {
       if (prev === null) return 'asc';
       if (prev === 'asc') return 'desc';
@@ -69,7 +133,7 @@ export function useEmployees() {
   };
 
   const toggleDateSort = () => {
-    setNameSort(null); // Clear name sort when user explicitly sorts by date
+    setNameSort(null);
     setDateSort((prev) => {
       if (prev === null) return 'desc';
       if (prev === 'desc') return 'asc';
@@ -82,73 +146,9 @@ export function useEmployees() {
     setEndDate('');
   };
 
-  // Pure, robust filtering and sorting pipeline with useMemo
-  const filteredEmployees = useMemo(() => {
-    // 1. Filter phase
-    const filtered = employees.filter((emp) => {
-      // Department filter
-      const matchesDept =
-        selectedDepartment === 'ALL' ||
-        emp.department.toLowerCase() === selectedDepartment.toLowerCase();
-      if (!matchesDept) return false;
-
-      // Text search filter (Name, Email, Role)
-      const query = searchQuery.trim().toLowerCase();
-      if (query) {
-        const matchesSearch =
-          emp.name.toLowerCase().includes(query) ||
-          emp.email.toLowerCase().includes(query) ||
-          emp.role.toLowerCase().includes(query);
-        if (!matchesSearch) return false;
-      }
-
-      // Timezone-safe Date Filter (Full day boundaries)
-      if (startDate) {
-        const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
-        const startBoundary = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0).getTime();
-        if (new Date(emp.createdAt).getTime() < startBoundary) return false;
-      }
-
-      if (endDate) {
-        const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
-        const endBoundary = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999).getTime();
-        if (new Date(emp.createdAt).getTime() > endBoundary) return false;
-      }
-
-      return true;
-    });
-
-    // 2. Sort phase
-    return [...filtered].sort((a, b) => {
-      // A. Status Cycle Sorting (Priority group first)
-      if (statusCycle !== 'default') {
-        const isAPriority = a.status === statusCycle;
-        const isBPriority = b.status === statusCycle;
-        if (isAPriority && !isBPriority) return -1;
-        if (!isAPriority && isBPriority) return 1;
-      }
-
-      // B. Alphabetical Sort on Employee Name
-      if (nameSort !== null) {
-        const nameComparison = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-        return nameSort === 'asc' ? nameComparison : -nameComparison;
-      }
-
-      // C. Joined Date Sort
-      if (dateSort !== null) {
-        const timeA = new Date(a.createdAt).getTime();
-        const timeB = new Date(b.createdAt).getTime();
-        return dateSort === 'asc' ? timeA - timeB : timeB - timeA;
-      }
-
-      // Default fallback: Order by created_at DESC (newest first)
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, [employees, searchQuery, selectedDepartment, startDate, endDate, nameSort, dateSort, statusCycle]);
-
-  // Statistics calculation
+  // Overall Statistics calculation (derived from current view or total)
   const stats = useMemo(() => {
-    const total = employees.length;
+    const total = pagination.total || employees.length;
     const active = employees.filter((e) => e.status === 'ACTIVE').length;
     const onLeave = employees.filter((e) => e.status === 'ON_LEAVE').length;
 
@@ -158,31 +158,35 @@ export function useEmployees() {
     }, {} as Record<string, number>);
 
     return { total, active, onLeave, departments };
-  }, [employees]);
+  }, [employees, pagination.total]);
 
   // Add Employee mutation
   const addEmployee = async (input: CreateEmployeeInput) => {
     const created = await employeeApi.createEmployee(input);
-    setEmployees((prev) => [created, ...prev]);
+    await fetchEmployees();
     return created;
   };
 
   // Edit Employee mutation
   const editEmployee = async (id: number, input: UpdateEmployeeInput) => {
     const updated = await employeeApi.updateEmployee(id, input);
-    setEmployees((prev) => prev.map((emp) => (emp.id === id ? updated : emp)));
+    await fetchEmployees();
     return updated;
   };
 
   // Delete Employee mutation
   const removeEmployee = async (id: number) => {
     await employeeApi.deleteEmployee(id);
-    setEmployees((prev) => prev.filter((emp) => emp.id !== id));
+    await fetchEmployees();
   };
 
   return {
     employees,
-    filteredEmployees,
+    pagination,
+    page,
+    setPage,
+    limit,
+    setLimit,
     loading,
     error,
     searchQuery,
