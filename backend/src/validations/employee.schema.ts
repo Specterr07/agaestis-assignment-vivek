@@ -35,11 +35,13 @@ export const createEmployeeSchema = z.object({
     .url('Avatar must be a valid URL')
     .max(500)
     .optional()
+    .nullable()
     .or(z.literal('')),
   phone: z
     .string()
     .max(20, 'Phone cannot exceed 20 characters')
     .optional()
+    .nullable()
     .or(z.literal('')),
 });
 

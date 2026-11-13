@@ -20,8 +20,8 @@ export interface CreateEmployeeInput {
   role: string;
   department: string;
   status: EmployeeStatus;
-  avatarUrl?: string;
-  phone?: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
 }
 
 export interface UpdateEmployeeInput {
@@ -30,8 +30,8 @@ export interface UpdateEmployeeInput {
   role?: string;
   department?: string;
   status?: EmployeeStatus;
-  avatarUrl?: string;
-  phone?: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
 }
 
 export interface PaginationMeta {

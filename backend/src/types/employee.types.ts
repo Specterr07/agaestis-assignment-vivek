@@ -6,8 +6,8 @@ export interface CreateEmployeeDto {
   role: string;
   department?: string;
   status?: EmployeeStatus;
-  avatarUrl?: string;
-  phone?: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
 }
 
 export interface UpdateEmployeeDto {
@@ -16,8 +16,8 @@ export interface UpdateEmployeeDto {
   role?: string;
   department?: string;
   status?: EmployeeStatus;
-  avatarUrl?: string;
-  phone?: string;
+  avatarUrl?: string | null;
+  phone?: string | null;
 }
 
 export interface EmployeeFilterQuery {

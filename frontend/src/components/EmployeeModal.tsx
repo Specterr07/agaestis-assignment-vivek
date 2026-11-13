@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Employee, CreateEmployeeInput, UpdateEmployeeInput, EmployeeStatus } from '../types/employee.types';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
@@ -86,7 +87,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         role: role.trim(),
         department,
         status,
-        avatarUrl: avatarUrl.trim() || undefined,
+        avatarUrl: avatarUrl.trim() ? avatarUrl.trim() : null,
       };
 
       await onSubmit(payload);
@@ -220,18 +221,69 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           </div>
         </div>
 
-        {/* Avatar URL (Optional) */}
+        {/* Avatar URL (Optional with Live Preview and Clear Button) */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Avatar Image URL <span className="text-slate-400 font-normal">(Optional)</span>
-          </label>
-          <input
-            type="url"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/photo-..."
-            className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 transition-all"
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-semibold text-slate-700">
+              Avatar Image URL <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={() => setAvatarUrl('')}
+                className="text-[11px] text-rose-600 hover:text-rose-700 font-medium"
+              >
+                Clear Image
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-xs font-bold text-slate-400">
+                  {name
+                    ? name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase()
+                    : '?'}
+                </span>
+              )}
+            </div>
+            <div className="relative flex-1">
+              <input
+                type="url"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/photo-..."
+                className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 transition-all pr-8"
+              />
+              {avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => setAvatarUrl('')}
+                  className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600"
+                  title="Remove image URL"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Leave blank to use automatically generated initials.
+          </p>
         </div>
 
         {/* Footer Actions */}
